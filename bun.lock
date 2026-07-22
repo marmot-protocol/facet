@@ -16,7 +16,7 @@
     },
     "apps/web": {
       "name": "@facet/web",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "dependencies": {
         "@dnd-kit/core": "6.3.1",
         "@dnd-kit/sortable": "10.0.0",
@@ -64,7 +64,7 @@
     },
     "packages/importer": {
       "name": "@facet/importer",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "dependencies": {
         "@facet/protocol": "workspace:*",
         "applesauce-common": "6.2.0",
@@ -86,7 +86,7 @@
     },
     "packages/protocol": {
       "name": "@facet/protocol",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "dependencies": {
         "applesauce-common": "6.2.0",
         "applesauce-core": "6.2.0",
@@ -103,7 +103,7 @@
     },
     "packages/strfry-policy": {
       "name": "@facet/strfry-policy",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "bin": {
         "facet-strfry-policy": "./src/main.ts",
       },
