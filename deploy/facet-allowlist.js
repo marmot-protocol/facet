@@ -31184,6 +31184,7 @@ var desiredOutcomeSchema = exports_external.enum([
 ]);
 var decisionStatusSchema = exports_external.enum(["open", "discussing", "decided", "superseded"]);
 var prioritySchema = exports_external.enum(["now", "next", "later", "none"]);
+var completionStatusSchema = exports_external.enum(["in_progress", "complete"]);
 var threadStateSchema = exports_external.enum(["open", "resolved"]);
 var idSchema = exports_external.string().min(1).max(200);
 var orderKeySchema = exports_external.string().min(1).max(100);
@@ -31236,6 +31237,7 @@ var capabilitySchema = exports_external.object({
   desiredOutcome: desiredOutcomeSchema,
   decisionStatus: decisionStatusSchema,
   priority: prioritySchema,
+  completionStatus: completionStatusSchema.default("in_progress"),
   rationaleCommentId: idSchema.optional(),
   links: exports_external.array(linkSchema).max(50)
 }).strict();
