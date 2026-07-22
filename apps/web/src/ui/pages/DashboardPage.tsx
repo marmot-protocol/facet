@@ -58,13 +58,13 @@ export function DashboardPage() {
           label="Critical gaps"
           value={gapCounts.critical}
           tone="critical"
-          detail="Now-priority severe divergence"
+          detail="Now-priority confirmed gaps"
         />
         <SummaryCard
           label="Gaps"
           value={gapCounts.gap}
           tone="warning"
-          detail="Confirmed status differences"
+          detail="Confirmed status or target differences"
         />
         <SummaryCard
           label="Needs verification"

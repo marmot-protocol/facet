@@ -38,7 +38,7 @@ describe("gap classification", () => {
     expect(result.label).toBe("critical");
   });
 
-  it("makes a confirmed decided-target miss critical at any priority", () => {
+  it("makes decided-target misses critical only when priority is now", () => {
     const decided = {
       ...capability,
       desiredOutcome: "standardize" as const,
@@ -48,6 +48,12 @@ describe("gap classification", () => {
     expect(
       classifyGap(decided, subjects, [assessment("mac", "partial"), assessment("ios", "partial")])
         .label,
+    ).toBe("gap");
+    expect(
+      classifyGap({ ...decided, priority: "now" }, subjects, [
+        assessment("mac", "partial"),
+        assessment("ios", "implemented"),
+      ]).label,
     ).toBe("critical");
     expect(
       classifyGap(decided, subjects, [
@@ -55,6 +61,31 @@ describe("gap classification", () => {
         assessment("ios", "implemented"),
       ]).label,
     ).toBe("needs_verification");
+  });
+
+  it("makes one lower-priority decided mismatch a gap when the other subjects match", () => {
+    const activeSubjects = ["ios", "mac", "android", "linux"].map((id) =>
+      subject(id, "active", true),
+    );
+    const result = classifyGap(
+      {
+        ...capability,
+        desiredOutcome: "remove",
+        decisionStatus: "decided",
+        priority: "none",
+      },
+      activeSubjects,
+      [
+        assessment("ios", "not_implemented"),
+        assessment("mac", "not_implemented"),
+        assessment("android", "implemented"),
+        assessment("linux", "not_implemented"),
+      ],
+    );
+
+    expect(result.label).toBe("gap");
+    expect(result.targetStatus).toBe("not_implemented");
+    expect(result.mismatchedSubjectIds).toEqual(["android"]);
   });
 
   it("ignores historical subjects and not-applicable cells", () => {

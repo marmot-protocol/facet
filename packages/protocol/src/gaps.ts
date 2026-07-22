@@ -67,13 +67,22 @@ export function classifyGap(
     targetStatus !== undefined &&
     materiallyMissingTargetSubjectIds.length > 0;
 
-  if ((capability.priority === "now" && severeDivergence) || decidedTargetMismatch) {
+  if (capability.priority === "now" && (severeDivergence || decidedTargetMismatch)) {
     return {
       label: "critical",
-      reason:
-        capability.priority === "now" && severeDivergence
-          ? "Priority is now and active subjects have severe confirmed divergence."
-          : "At least one active subject materially misses the decided target.",
+      reason: decidedTargetMismatch
+        ? "Priority is now and at least one active subject materially misses the decided target."
+        : "Priority is now and active subjects have severe confirmed divergence.",
+      confirmedStatuses,
+      unknownSubjectIds,
+      mismatchedSubjectIds,
+      ...(targetStatus ? { targetStatus } : {}),
+    };
+  }
+  if (decidedTargetMismatch) {
+    return {
+      label: "gap",
+      reason: "At least one active subject materially misses the decided target.",
       confirmedStatuses,
       unknownSubjectIds,
       mismatchedSubjectIds,
