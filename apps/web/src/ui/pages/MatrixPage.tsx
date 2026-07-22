@@ -27,7 +27,15 @@ import {
   filterCapabilities,
 } from "../Filters";
 import { useActionExecutor } from "../hooks";
-import { GapBadge, Modal, PriorityBadge, StatusBadge } from "../primitives";
+import {
+  GapBadge,
+  Modal,
+  PriorityBadge,
+  StatusBadge,
+  StatusIcon,
+  statusColor,
+  statusLabel,
+} from "../primitives";
 
 const STATUSES: ImplementationStatus[] = [
   "unknown",
@@ -241,19 +249,25 @@ function AssessmentCell({
     );
   return (
     <div>
-      <select
-        aria-label={`Set ${capability.title} status`}
-        className="input !min-h-8 !py-1 text-xs"
-        value={status}
-        disabled={running}
-        onChange={(event) => void update(event.target.value as ImplementationStatus)}
-      >
-        {STATUSES.map((item) => (
-          <option key={item} value={item}>
-            {item.replaceAll("_", " ")}
-          </option>
-        ))}
-      </select>
+      <div className="relative" data-assessment-status={status}>
+        <StatusIcon
+          status={status}
+          className={`pointer-events-none absolute left-2.5 top-1/2 z-[1] -translate-y-1/2 ${statusColor(status)}`}
+        />
+        <select
+          aria-label={`Set ${capability.title} status`}
+          className="input !min-h-8 !py-1 !pl-8 text-xs"
+          value={status}
+          disabled={running}
+          onChange={(event) => void update(event.target.value as ImplementationStatus)}
+        >
+          {STATUSES.map((item) => (
+            <option key={item} value={item}>
+              {statusLabel(item)}
+            </option>
+          ))}
+        </select>
+      </div>
       {assessment?.note ? (
         <p className="mb-0 mt-1 line-clamp-2 text-[10px] text-[var(--muted)]">{assessment.note}</p>
       ) : null}

@@ -4,7 +4,17 @@ import * as Select from "@radix-ui/react-select";
 import { getParsedContent } from "applesauce-content/text";
 import { ProfileModel } from "applesauce-core/models/profile";
 import { useEventModel } from "applesauce-react/hooks/use-event-model";
-import { Check, ChevronDown, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  CircleCheck,
+  CircleDot,
+  CircleHelp,
+  CircleMinus,
+  CircleX,
+  TriangleAlert,
+  X,
+} from "lucide-react";
 import { nip19 } from "nostr-tools";
 import type { PropsWithChildren, ReactNode } from "react";
 
@@ -120,14 +130,6 @@ export function GapBadge({ label }: { label: GapLabel }) {
 }
 
 export function StatusBadge({ status }: { status: ImplementationStatus }) {
-  const names: Record<ImplementationStatus, string> = {
-    unknown: "Unknown",
-    not_implemented: "Not implemented",
-    partial: "Partial",
-    implemented: "Implemented",
-    stub_or_broken: "Stub / broken",
-    not_applicable: "N/A",
-  };
   const tone =
     status === "implemented"
       ? "success"
@@ -138,7 +140,62 @@ export function StatusBadge({ status }: { status: ImplementationStatus }) {
           : status === "partial"
             ? "warning"
             : "critical";
-  return <Badge tone={tone}>{names[status]}</Badge>;
+  return (
+    <Badge tone={tone}>
+      <StatusIcon status={status} size={12} />
+      {statusLabel(status)}
+    </Badge>
+  );
+}
+
+export function StatusIcon({
+  status,
+  size = 14,
+  className = "",
+}: {
+  status: ImplementationStatus;
+  size?: number;
+  className?: string;
+}) {
+  const Icon = {
+    unknown: CircleHelp,
+    not_implemented: CircleX,
+    partial: CircleDot,
+    implemented: CircleCheck,
+    stub_or_broken: TriangleAlert,
+    not_applicable: CircleMinus,
+  }[status];
+  return (
+    <Icon
+      aria-hidden="true"
+      className={className}
+      data-status-icon={status}
+      size={size}
+      strokeWidth={2.25}
+    />
+  );
+}
+
+export function statusLabel(status: ImplementationStatus): string {
+  return {
+    unknown: "Unknown",
+    not_implemented: "Not implemented",
+    partial: "Partial",
+    implemented: "Implemented",
+    stub_or_broken: "Stub / broken",
+    not_applicable: "N/A",
+  }[status];
+}
+
+export function statusColor(status: ImplementationStatus): string {
+  return {
+    unknown: "text-[var(--faint)]",
+    not_implemented: "text-[var(--critical)]",
+    partial: "text-[var(--warning)]",
+    implemented: "text-[var(--success)]",
+    stub_or_broken: "text-[var(--critical)]",
+    not_applicable: "text-[var(--faint)]",
+  }[status];
 }
 
 export function PriorityBadge({ priority }: { priority: Priority }) {
@@ -162,7 +219,7 @@ export function Badge({
   }[tone];
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold ${style}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${style}`}
     >
       {children}
     </span>

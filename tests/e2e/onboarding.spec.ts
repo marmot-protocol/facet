@@ -91,8 +91,10 @@ test("extension signer completes the core board, matrix, and discussion flow", a
 
   await expect(page.getByRole("link", { name: "Message editing" })).toBeVisible();
   const status = page.getByLabel("Set Message editing status").first();
+  await expect(status.locator("..")).toHaveAttribute("data-assessment-status", "unknown");
   await status.selectOption("implemented");
   await expect(status).toHaveValue("implemented");
+  await expect(status.locator("..")).toHaveAttribute("data-assessment-status", "implemented");
   await page.getByRole("link", { name: "Message editing" }).click();
 
   await expect(page.getByLabel("Discussion target")).toHaveCount(0);
