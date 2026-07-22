@@ -12,6 +12,7 @@ const capability: Capability = {
   desiredOutcome: "undecided",
   decisionStatus: "open",
   priority: "none",
+  completionStatus: "in_progress",
   links: [],
 };
 

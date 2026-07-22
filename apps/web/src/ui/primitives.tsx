@@ -1,4 +1,4 @@
-import type { GapLabel, ImplementationStatus, Priority } from "@facet/protocol";
+import type { CompletionStatus, GapLabel, ImplementationStatus, Priority } from "@facet/protocol";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Select from "@radix-ui/react-select";
 import { getParsedContent } from "applesauce-content/text";
@@ -202,6 +202,15 @@ export function PriorityBadge({ priority }: { priority: Priority }) {
   return (
     <Badge tone={priority === "now" ? "critical" : priority === "next" ? "warning" : "neutral"}>
       {priority}
+    </Badge>
+  );
+}
+
+export function CompletionBadge({ status }: { status: CompletionStatus }) {
+  return (
+    <Badge tone={status === "complete" ? "success" : "neutral"}>
+      {status === "complete" ? <CircleCheck size={12} /> : <CircleDot size={12} />}
+      {status === "complete" ? "Complete" : "In progress"}
     </Badge>
   );
 }

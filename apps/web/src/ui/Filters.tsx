@@ -1,6 +1,7 @@
 import type {
   BoardProjection,
   Capability,
+  CompletionStatus,
   DecisionStatus,
   DesiredOutcome,
   ImplementationStatus,
@@ -18,8 +19,10 @@ export type CapabilityFilters = {
   desiredOutcome: "all" | DesiredOutcome;
   decisionStatus: "all" | DecisionStatus;
   priority: "all" | Priority;
+  completion: "all" | CompletionStatus;
   discussion: "all" | "unresolved";
   links: "all" | "linked";
+  sort: "board_order" | "in_progress_first" | "complete_first";
 };
 
 export const EMPTY_FILTERS: CapabilityFilters = {
@@ -29,8 +32,10 @@ export const EMPTY_FILTERS: CapabilityFilters = {
   desiredOutcome: "all",
   decisionStatus: "all",
   priority: "all",
+  completion: "all",
   discussion: "all",
   links: "all",
+  sort: "board_order",
 };
 
 export function CapabilityFilterBar({
@@ -69,10 +74,16 @@ export function CapabilityFilterBar({
     filters.priority !== "all"
       ? { key: "priority" as const, label: `Priority: ${humanize(filters.priority)}` }
       : null,
+    filters.completion !== "all"
+      ? { key: "completion" as const, label: `Completion: ${humanize(filters.completion)}` }
+      : null,
     filters.discussion !== "all"
       ? { key: "discussion" as const, label: "Discussion: Unresolved" }
       : null,
     filters.links !== "all" ? { key: "links" as const, label: "References: Has reference" } : null,
+    filters.sort !== "board_order"
+      ? { key: "sort" as const, label: `Sort: ${humanize(filters.sort)}` }
+      : null,
   ].filter((filter) => filter !== null);
   const activeCount = activeFilters.length + (filters.query.trim() ? 1 : 0);
   const clearFilter = (key: (typeof activeFilters)[number]["key"]) =>
@@ -197,6 +208,16 @@ export function CapabilityFilterBar({
                 options={enumOptions("All priorities", ["now", "next", "later", "none"])}
               />
             </FilterField>
+            <FilterField label="Completion">
+              <SelectInput
+                value={filters.completion}
+                onValueChange={(value) =>
+                  update("completion", value as CapabilityFilters["completion"])
+                }
+                label="Completion filter"
+                options={enumOptions("All completion states", ["in_progress", "complete"])}
+              />
+            </FilterField>
             <FilterField label="Discussion">
               <SelectInput
                 value={filters.discussion}
@@ -218,6 +239,18 @@ export function CapabilityFilterBar({
                 options={[
                   { value: "all", label: "All references" },
                   { value: "linked", label: "Has reference" },
+                ]}
+              />
+            </FilterField>
+            <FilterField label="Sort">
+              <SelectInput
+                value={filters.sort}
+                onValueChange={(value) => update("sort", value as CapabilityFilters["sort"])}
+                label="Capability sort"
+                options={[
+                  { value: "board_order", label: "Board order" },
+                  { value: "in_progress_first", label: "In progress first" },
+                  { value: "complete_first", label: "Complete first" },
                 ]}
               />
             </FilterField>
@@ -262,7 +295,7 @@ export function filterCapabilities(
   filters: CapabilityFilters,
 ): Capability[] {
   const query = filters.query.trim().toLowerCase();
-  return capabilities.filter((capability) => {
+  const filtered = capabilities.filter((capability) => {
     if (
       query &&
       !`${capability.title} ${capability.description ?? ""}`.toLowerCase().includes(query)
@@ -281,6 +314,8 @@ export function filterCapabilities(
     if (filters.decisionStatus !== "all" && capability.decisionStatus !== filters.decisionStatus)
       return false;
     if (filters.priority !== "all" && capability.priority !== filters.priority) return false;
+    if (filters.completion !== "all" && capability.completionStatus !== filters.completion)
+      return false;
     if (
       filters.discussion === "unresolved" &&
       unresolvedThreadCount(projection, capability.id) === 0
@@ -288,6 +323,14 @@ export function filterCapabilities(
       return false;
     if (filters.links === "linked" && capability.links.length === 0) return false;
     return true;
+  });
+  if (filters.sort === "board_order") return filtered;
+  const completedFirst = filters.sort === "complete_first";
+  return [...filtered].sort((left, right) => {
+    const leftComplete = left.completionStatus === "complete";
+    const rightComplete = right.completionStatus === "complete";
+    if (leftComplete === rightComplete) return 0;
+    return leftComplete === completedFirst ? -1 : 1;
   });
 }
 

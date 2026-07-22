@@ -734,6 +734,7 @@ async function boardFixture() {
     desiredOutcome: "standardize",
     decisionStatus: "decided",
     priority: "now",
+    completionStatus: "in_progress",
     links: [],
   };
   const assessment: Assessment = {

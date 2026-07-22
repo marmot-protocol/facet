@@ -25,6 +25,7 @@ const linkedCapability: Capability = {
   desiredOutcome: "standardize",
   decisionStatus: "decided",
   priority: "now",
+  completionStatus: "in_progress",
   links: [{ label: "Specification", url: "https://example.com/spec" }],
 };
 
@@ -36,6 +37,7 @@ const otherCapability: Capability = {
   desiredOutcome: "keep_as_is",
   decisionStatus: "open",
   priority: "later",
+  completionStatus: "complete",
   links: [],
 };
 
@@ -85,6 +87,27 @@ describe("capability filters", () => {
         implementation: "unknown",
       }),
     ).toEqual([otherCapability]);
+  });
+
+  it("filters and sorts by explicit capability completion", () => {
+    expect(
+      filterCapabilities([linkedCapability, otherCapability], projection, "ios", {
+        ...EMPTY_FILTERS,
+        completion: "complete",
+      }),
+    ).toEqual([otherCapability]);
+    expect(
+      filterCapabilities([linkedCapability, otherCapability], projection, "ios", {
+        ...EMPTY_FILTERS,
+        sort: "complete_first",
+      }),
+    ).toEqual([otherCapability, linkedCapability]);
+    expect(
+      filterCapabilities([otherCapability, linkedCapability], projection, "ios", {
+        ...EMPTY_FILTERS,
+        sort: "in_progress_first",
+      }),
+    ).toEqual([linkedCapability, otherCapability]);
   });
 });
 

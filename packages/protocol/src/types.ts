@@ -21,6 +21,7 @@ export type DesiredOutcome =
   | "undecided";
 export type DecisionStatus = "open" | "discussing" | "decided" | "superseded";
 export type Priority = "now" | "next" | "later" | "none";
+export type CompletionStatus = "in_progress" | "complete";
 export type ThreadState = "open" | "resolved";
 export type GapLabel = "critical" | "gap" | "needs_verification" | "aligned";
 
@@ -77,6 +78,7 @@ export type Capability = {
   desiredOutcome: DesiredOutcome;
   decisionStatus: DecisionStatus;
   priority: Priority;
+  completionStatus: CompletionStatus;
   rationaleCommentId?: string;
   links: Link[];
 };

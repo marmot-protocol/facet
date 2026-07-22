@@ -2,6 +2,7 @@ import {
   type Assessment,
   assessmentId,
   type Capability,
+  type CompletionStatus,
   type DecisionStatus,
   type DesiredOutcome,
   type FeatureArea,
@@ -33,6 +34,7 @@ import {
 } from "../Filters";
 import { useActionExecutor } from "../hooks";
 import {
+  CompletionBadge,
   GapBadge,
   Modal,
   PriorityBadge,
@@ -63,6 +65,8 @@ const DESIRED_OUTCOMES: DesiredOutcome[] = [
 const DECISION_STATUSES: DecisionStatus[] = ["open", "discussing", "decided", "superseded"];
 
 const PRIORITIES: Priority[] = ["now", "next", "later", "none"];
+
+const COMPLETION_STATUSES: CompletionStatus[] = ["in_progress", "complete"];
 
 export function MatrixPage() {
   const context = useBoardContext();
@@ -297,6 +301,9 @@ function MatrixGroup({
   visibleSubjects: ReturnType<typeof useBoardContext>["subjects"];
 }) {
   if (capabilities.length === 0) return null;
+  const completeCount = capabilities.filter(
+    (capability) => capability.completionStatus === "complete",
+  ).length;
   return (
     <>
       <tr>
@@ -306,6 +313,9 @@ function MatrixGroup({
         >
           {area.title}
           <span className="ml-2 font-normal text-[var(--faint)]">{capabilities.length}</span>
+          {completeCount ? (
+            <span className="ml-2 font-normal text-[var(--success)]">{completeCount} complete</span>
+          ) : null}
         </th>
       </tr>
       {capabilities.map((capability) => (
@@ -340,7 +350,9 @@ function MatrixCapabilityRows({
     draft.title !== capability.title ||
     draft.desiredOutcome !== capability.desiredOutcome ||
     draft.decisionStatus !== capability.decisionStatus ||
-    draft.priority !== capability.priority;
+    draft.priority !== capability.priority ||
+    draft.completionStatus !== capability.completionStatus;
+  const complete = capability.completionStatus === "complete";
 
   const openEditor = () => {
     if (editing) {
@@ -369,6 +381,7 @@ function MatrixCapabilityRows({
       desiredOutcome: draft.desiredOutcome,
       decisionStatus: draft.decisionStatus,
       priority: draft.priority,
+      completionStatus: draft.completionStatus,
     };
     await run(
       PublishMutation({
@@ -385,8 +398,12 @@ function MatrixCapabilityRows({
 
   return (
     <>
-      <tr className="group hover:bg-[color:var(--accent-soft)]/30">
-        <td className="sticky left-0 z-[1] border-b border-r border-[var(--border)] bg-[var(--panel)] p-3 group-hover:bg-[var(--panel-strong)]">
+      <tr
+        className={`group ${complete ? "bg-[color:var(--success-soft)]/20" : "hover:bg-[color:var(--accent-soft)]/30"}`}
+      >
+        <td
+          className={`sticky left-0 z-[1] border-b border-r border-[var(--border)] p-3 ${complete ? "bg-[var(--success-soft)]" : "bg-[var(--panel)] group-hover:bg-[var(--panel-strong)]"}`}
+        >
           {permissions.canWrite ? (
             <button
               type="button"
@@ -409,6 +426,7 @@ function MatrixCapabilityRows({
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <GapBadge label={gap.label} />
             <PriorityBadge priority={capability.priority} />
+            {complete ? <CompletionBadge status="complete" /> : null}
             {discussions ? (
               <span className="inline-flex items-center gap-1 text-[10px] text-[var(--muted)]">
                 <MessageSquareText size={11} />
@@ -445,7 +463,7 @@ function MatrixCapabilityRows({
                 void save();
               }}
             >
-              <div className="grid gap-3 lg:grid-cols-[minmax(240px,2fr)_repeat(3,minmax(140px,1fr))]">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.7fr)_repeat(4,minmax(130px,1fr))]">
                 <label className="label">
                   Title
                   <input
@@ -503,6 +521,25 @@ function MatrixCapabilityRows({
                     }
                   >
                     {PRIORITIES.map((value) => (
+                      <option key={value} value={value}>
+                        {humanize(value)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="label">
+                  Completion
+                  <select
+                    className="input !min-h-9"
+                    value={draft.completionStatus}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        completionStatus: event.target.value as CompletionStatus,
+                      })
+                    }
+                  >
+                    {COMPLETION_STATUSES.map((value) => (
                       <option key={value} value={value}>
                         {humanize(value)}
                       </option>
@@ -682,6 +719,7 @@ function CreateStructureDialog({
         desiredOutcome: "undecided",
         decisionStatus: "open",
         priority: "none",
+        completionStatus: "in_progress",
         links: [],
       };
       await run(

@@ -2,6 +2,7 @@ import {
   type Assessment,
   assessmentId,
   type Capability,
+  type CompletionStatus,
   type DecisionStatus,
   type DesiredOutcome,
   getTag,
@@ -43,6 +44,7 @@ import { useActionExecutor, useIdentity } from "../hooks";
 import { encodeNostrMentions, type MentionReference, MentionTextarea } from "../MentionTextarea";
 import {
   Badge,
+  CompletionBadge,
   formatRelative,
   GapBadge,
   Identity,
@@ -86,6 +88,7 @@ export function CapabilityPage() {
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <GapBadge label={gap.label} />
             <PriorityBadge priority={capability.priority} />
+            <CompletionBadge status={capability.completionStatus} />
             <Badge>{capability.decisionStatus}</Badge>
             <span className="text-xs text-[var(--muted)]">{gap.reason}</span>
           </div>
@@ -153,6 +156,10 @@ export function CapabilityPage() {
               <dt className="text-[var(--muted)]">Priority</dt>
               <dd className="m-0">
                 <PriorityBadge priority={capability.priority} />
+              </dd>
+              <dt className="text-[var(--muted)]">Completion</dt>
+              <dd className="m-0">
+                <CompletionBadge status={capability.completionStatus} />
               </dd>
               <dt className="text-[var(--muted)]">Rationale</dt>
               <dd className="m-0 text-xs">
@@ -966,7 +973,7 @@ function EditCapabilityDialog({
             ))}
           </select>
         </label>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <label className="label">
             Desired outcome
             <select
@@ -1009,6 +1016,25 @@ function EditCapabilityDialog({
               onChange={(event) => setDraft({ ...draft, priority: event.target.value as Priority })}
             >
               {["now", "next", "later", "none"].map((value) => (
+                <option key={value} value={value}>
+                  {humanize(value)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="label">
+            Completion
+            <select
+              className="input"
+              value={draft.completionStatus}
+              onChange={(event) =>
+                setDraft({
+                  ...draft,
+                  completionStatus: event.target.value as CompletionStatus,
+                })
+              }
+            >
+              {(["in_progress", "complete"] as CompletionStatus[]).map((value) => (
                 <option key={value} value={value}>
                   {humanize(value)}
                 </option>
@@ -1161,6 +1187,7 @@ function capabilityDiff(previous: Capability, current: Capability): string[] {
     "desiredOutcome",
     "decisionStatus",
     "priority",
+    "completionStatus",
     "rationaleCommentId",
     "links",
   ];

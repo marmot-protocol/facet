@@ -9,7 +9,7 @@ import {
   EMPTY_FILTERS,
   filterCapabilities,
 } from "../Filters";
-import { GapBadge, PriorityBadge, StatusBadge } from "../primitives";
+import { CompletionBadge, GapBadge, PriorityBadge, StatusBadge } from "../primitives";
 
 export function CardsPage() {
   const { projection, subjects, selectedSubjectId } = useBoardContext();
@@ -44,7 +44,7 @@ export function CardsPage() {
             <Link
               key={capability.id}
               to={`../capabilities/${capability.id}`}
-              className="panel group flex min-h-48 flex-col p-4 text-inherit no-underline transition-transform hover:-translate-y-0.5 hover:shadow-[var(--shadow)]"
+              className={`panel group flex min-h-48 flex-col p-4 text-inherit no-underline transition-transform hover:-translate-y-0.5 hover:shadow-[var(--shadow)] ${capability.completionStatus === "complete" ? "border-[var(--success)]" : ""}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -63,6 +63,7 @@ export function CardsPage() {
               <div className="mt-auto flex flex-wrap items-center gap-1.5">
                 <GapBadge label={gap.label} />
                 <PriorityBadge priority={capability.priority} />
+                <CompletionBadge status={capability.completionStatus} />
                 <span className="rounded-full bg-[var(--sidebar)] px-2 py-0.5 text-[11px] font-bold text-[var(--muted)]">
                   {capability.decisionStatus}
                 </span>

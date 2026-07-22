@@ -24,6 +24,7 @@ export const desiredOutcomeSchema = z.enum([
 ]);
 export const decisionStatusSchema = z.enum(["open", "discussing", "decided", "superseded"]);
 export const prioritySchema = z.enum(["now", "next", "later", "none"]);
+export const completionStatusSchema = z.enum(["in_progress", "complete"]);
 export const threadStateSchema = z.enum(["open", "resolved"]);
 
 const idSchema = z.string().min(1).max(200);
@@ -92,6 +93,7 @@ export const capabilitySchema = z
     desiredOutcome: desiredOutcomeSchema,
     decisionStatus: decisionStatusSchema,
     priority: prioritySchema,
+    completionStatus: completionStatusSchema.default("in_progress"),
     rationaleCommentId: idSchema.optional(),
     links: z.array(linkSchema).max(50),
   })

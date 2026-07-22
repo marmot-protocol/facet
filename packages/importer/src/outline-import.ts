@@ -139,6 +139,7 @@ export async function buildOutlineImport(
         desiredOutcome: importedCapability.desiredOutcome,
         decisionStatus: importedCapability.decisionStatus,
         priority: importedCapability.priority,
+        completionStatus: "in_progress",
         links: importedCapability.links,
       };
       const event = await createMutationFactory({

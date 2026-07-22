@@ -117,6 +117,7 @@ describeWithStrfry("real strfry write-policy integration", () => {
       desiredOutcome: "standardize",
       decisionStatus: "open",
       priority: "now",
+      completionStatus: "in_progress",
       links: [],
     };
     const capabilityEvent = await createMutationFactory({

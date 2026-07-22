@@ -44,6 +44,11 @@ one coordinated schema migration, never by accepting both meanings.
 `value` is the complete resulting entity, not a patch. Imported mutations add `importMetadata`
 with source, stable source ID, and original attribution where applicable.
 
+Capabilities carry an explicit `completionStatus` of `in_progress | complete`. Completion is
+workflow metadata chosen by board members: it is not inferred from assessments, does not archive or
+hide the capability, and does not suppress gaps. Events created before this field was introduced
+project as `in_progress`.
+
 `baseEventId` is `null` for an initial mutation. Later mutations must point to a valid retained
 event in that entity's history. A stale but real predecessor remains valid so confirmed concurrent
 overwrites and their losing snapshots stay auditable; a nonexistent or cross-entity predecessor is

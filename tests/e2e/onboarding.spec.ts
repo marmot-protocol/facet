@@ -112,12 +112,23 @@ test("extension signer completes the core board, matrix, and discussion flow", a
   await inlineEditor.getByLabel("Desired outcome").selectOption("standardize");
   await inlineEditor.getByLabel("Decision status").selectOption("decided");
   await inlineEditor.getByLabel("Priority").selectOption("now");
+  await inlineEditor.getByLabel("Completion").selectOption("complete");
   await inlineEditor.getByRole("button", { name: "Save & publish" }).click();
   await expect(inlineEditor).toHaveCount(0);
   const capabilityButton = page.getByRole("button", { name: "Message revision", exact: true });
   await expect(capabilityButton).toBeVisible();
   const capabilityRow = page.getByRole("row").filter({ has: capabilityButton });
   await expect(capabilityRow.getByText("now", { exact: true })).toBeVisible();
+  await expect(capabilityRow.getByText("Complete", { exact: true })).toBeVisible();
+
+  await page.getByLabel("Completion filter").click();
+  await page.getByRole("option", { name: "In progress", exact: true }).click();
+  await expect(capabilityButton).toHaveCount(0);
+  await page.getByLabel("Completion filter").click();
+  await page.getByRole("option", { name: "Complete", exact: true }).click();
+  await expect(capabilityButton).toBeVisible();
+  await page.getByLabel("Completion filter").click();
+  await page.getByRole("option", { name: "All completion states", exact: true }).click();
 
   const status = page.getByLabel("Set Message revision status").first();
   await expect(status.locator("..")).toHaveAttribute("data-assessment-status", "unknown");
@@ -129,6 +140,7 @@ test("extension signer completes the core board, matrix, and discussion flow", a
   await expect(inlineEditor.getByLabel("Desired outcome")).toHaveValue("standardize");
   await expect(inlineEditor.getByLabel("Decision status")).toHaveValue("decided");
   await expect(inlineEditor.getByLabel("Priority")).toHaveValue("now");
+  await expect(inlineEditor.getByLabel("Completion")).toHaveValue("complete");
   const matrixAccessibility = await new AxeBuilder({ page }).analyze();
   expect(matrixAccessibility.violations).toEqual([]);
   await inlineEditor.getByRole("link", { name: "Open full details" }).click();

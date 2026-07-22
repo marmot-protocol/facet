@@ -199,6 +199,7 @@ describe("strfry policy", () => {
       desiredOutcome: "standardize",
       decisionStatus: "open",
       priority: "now",
+      completionStatus: "in_progress",
       links: [],
     };
     const capabilityEvent = await signMutation(admin, {

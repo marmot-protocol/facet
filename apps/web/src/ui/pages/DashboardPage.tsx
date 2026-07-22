@@ -9,7 +9,14 @@ import { ArrowRight, CircleAlert, MessageSquareText, RadioTower } from "lucide-r
 import { Link } from "react-router-dom";
 import { ComparisonSubjectSelector, useBoardContext } from "../BoardShell";
 import { activeCapabilities, assessmentFor, gapFor, unresolvedThreadCount } from "../board-data";
-import { EmptyState, formatRelative, GapBadge, PriorityBadge, StatusBadge } from "../primitives";
+import {
+  CompletionBadge,
+  EmptyState,
+  formatRelative,
+  GapBadge,
+  PriorityBadge,
+  StatusBadge,
+} from "../primitives";
 
 export function DashboardPage() {
   const { projection, subjects, selectedSubjectId } = useBoardContext();
@@ -191,6 +198,9 @@ function WorkList({
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 <GapBadge label={gap.label} />
                 <PriorityBadge priority={capability.priority} />
+                {capability.completionStatus === "complete" ? (
+                  <CompletionBadge status="complete" />
+                ) : null}
                 {unresolved > 0 ? (
                   <span className="inline-flex items-center gap-1 text-[11px] text-[var(--muted)]">
                     <MessageSquareText size={11} /> {unresolved} open
