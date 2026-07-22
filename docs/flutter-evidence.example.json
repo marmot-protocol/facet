@@ -1,0 +1,15 @@
+{
+  "capabilities": [
+    {
+      "capabilityTitle": "Message editing",
+      "status": "implemented",
+      "note": "Historical Flutter implementation at the final release.",
+      "evidence": [
+        {
+          "path": "lib/src/features/messages/message_actions.dart",
+          "contains": "editMessage"
+        }
+      ]
+    }
+  ]
+}

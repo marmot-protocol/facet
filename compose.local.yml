@@ -1,0 +1,35 @@
+name: facet-local
+
+services:
+  relay:
+    build:
+      context: ./deploy/local
+      dockerfile: Dockerfile.strfry
+      args:
+        STRFRY_REPOSITORY: ${FACET_STRFRY_REPOSITORY:-https://github.com/erskingardner/strfry.git}
+        STRFRY_REF: ${FACET_STRFRY_REF:-b80cda3a812af1b662223edad47eb70b053508b6}
+    init: true
+    ports:
+      - "127.0.0.1:7777:7777"
+    environment:
+      STRFRY_CONFIG: /config/strfry.conf
+      FACET_STRFRY_BIN: /app/strfry
+      FACET_STRFRY_DIR: /config
+      FACET_REQUIRE_NIP42: "true"
+      FACET_ALLOW_OTHER_EVENTS: "false"
+      FACET_MAX_CLOCK_SKEW_SECONDS: "300"
+      FACET_TRUSTED_IMPORTER_PUBKEYS: ${FACET_TRUSTED_IMPORTER_PUBKEYS:-}
+      FACET_ACTIVE_IMPORTER_PUBKEYS: ${FACET_ACTIVE_IMPORTER_PUBKEYS:-}
+    volumes:
+      - facet-strfry-data:/data
+      - ./deploy/local/strfry.conf:/config/strfry.conf:ro
+      - ./deploy/facet-allowlist.js:/policy/facet-allowlist.js:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:7777/"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+      start_period: 2s
+
+volumes:
+  facet-strfry-data:

@@ -1,0 +1,49 @@
+FROM alpine:3.18.3 AS build
+
+ARG STRFRY_REPOSITORY=https://github.com/erskingardner/strfry.git
+ARG STRFRY_REF=b80cda3a812af1b662223edad47eb70b053508b6
+
+WORKDIR /build
+
+RUN apk --no-cache add \
+    ca-certificates \
+    flatbuffers-dev \
+    g++ \
+    git \
+    libressl-dev \
+    libsecp256k1-dev \
+    libtool \
+    linux-headers \
+    lmdb-dev \
+    make \
+    perl \
+    pkgconfig \
+    zlib-dev \
+    zstd-dev
+
+RUN git clone --recursive "$STRFRY_REPOSITORY" . \
+  && git checkout "$STRFRY_REF" \
+  && git submodule update --init --recursive \
+  && make setup-golpe \
+  && make -j4
+
+FROM alpine:3.18.3
+
+WORKDIR /app
+
+RUN apk --no-cache add \
+    flatbuffers \
+    libb2 \
+    libressl \
+    libsecp256k1 \
+    lmdb \
+    nodejs \
+    zstd \
+  && mkdir -p /config /data /policy
+
+COPY --from=build /build/strfry /app/strfry
+
+EXPOSE 7777
+
+ENTRYPOINT ["/app/strfry"]
+CMD ["relay"]

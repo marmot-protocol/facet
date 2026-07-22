@@ -1,0 +1,24 @@
+{
+  "name": "@facet/strfry-policy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "facet-strfry-policy": "./src/main.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "start": "bun src/main.ts"
+  },
+  "dependencies": {
+    "@facet/protocol": "workspace:*",
+    "nostr-tools": "2.17.0"
+  },
+  "devDependencies": {
+    "applesauce-relay": "6.2.1",
+    "applesauce-signers": "6.2.2",
+    "rxjs": "7.8.2"
+  }
+}

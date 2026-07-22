@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+
+: "${FACET_REPOSITORY:?Set FACET_REPOSITORY to the absolute checkout path}"
+: "${FACET_STRFRY_BIN:?Set FACET_STRFRY_BIN to the absolute strfry binary path}"
+: "${FACET_STRFRY_DIR:?Set FACET_STRFRY_DIR to the strfry deployment directory}"
+
+export FACET_REQUIRE_NIP42="${FACET_REQUIRE_NIP42:-true}"
+export FACET_ALLOW_OTHER_EVENTS="${FACET_ALLOW_OTHER_EVENTS:-false}"
+export FACET_MAX_CLOCK_SKEW_SECONDS="${FACET_MAX_CLOCK_SKEW_SECONDS:-300}"
+
+exec bun "$FACET_REPOSITORY/packages/strfry-policy/src/main.ts"
