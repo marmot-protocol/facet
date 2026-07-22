@@ -79,7 +79,16 @@ export function BoardShell() {
         <div className="skeleton h-8 w-40" />
       </div>
     );
-  if (!projection.board) return <Navigate to="/" replace />;
+  if (!projection.board) {
+    if (status.phase === "starting") {
+      return (
+        <div className="grid min-h-screen place-items-center">
+          <div className="skeleton h-8 w-40" />
+        </div>
+      );
+    }
+    return <Navigate to="/" replace />;
+  }
   const permissions = permissionsFor(projection, pubkey, status.online);
   const setSelectedSubjectId = (id: string) => {
     setSelectedSubjectIdState(id);

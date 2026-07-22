@@ -63,6 +63,14 @@ export class LocalState {
     return next;
   }
 
+  async matrixHiddenSubjectIds(boardId: string): Promise<string[]> {
+    return this.get(`matrix-hidden-subjects:${boardId}`, []);
+  }
+
+  async saveMatrixHiddenSubjectIds(boardId: string, subjectIds: string[]): Promise<void> {
+    await this.set(`matrix-hidden-subjects:${boardId}`, subjectIds);
+  }
+
   async followedCapabilities(): Promise<string[]> {
     return this.get("followed-capabilities", []);
   }

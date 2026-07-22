@@ -8,10 +8,12 @@ import {
   newEntityId,
   orderKeyBetween,
 } from "@facet/protocol";
-import { LockKeyhole, MessageSquareText, Plus } from "lucide-react";
+import * as Popover from "@radix-ui/react-popover";
+import { Columns3, LockKeyhole, MessageSquareText, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { PublishMutation } from "../../runtime/actions";
+import { useRuntime } from "../../runtime/provider";
 import { ComparisonSubjectSelector, useBoardContext } from "../BoardShell";
 import {
   activeCapabilities,
@@ -49,8 +51,53 @@ const STATUSES: ImplementationStatus[] = [
 export function MatrixPage() {
   const context = useBoardContext();
   const { projection, subjects, selectedSubjectId, permissions } = context;
+  const { runtime } = useRuntime();
   const [filters, setFilters] = useState<CapabilityFilters>(EMPTY_FILTERS);
   const [createOpen, setCreateOpen] = useState(false);
+  const [hiddenSubjectIds, setHiddenSubjectIds] = useState<string[]>([]);
+  const [visibilitySaving, setVisibilitySaving] = useState(false);
+  const boardId = projection.boardId;
+  useEffect(() => {
+    let active = true;
+    setHiddenSubjectIds([]);
+    void runtime.localState.matrixHiddenSubjectIds(boardId).then((ids) => {
+      if (!active) return;
+      setHiddenSubjectIds(ids);
+    });
+    return () => {
+      active = false;
+    };
+  }, [runtime, boardId]);
+  const hiddenSubjectSet = useMemo(() => new Set(hiddenSubjectIds), [hiddenSubjectIds]);
+  const visibleSubjects = useMemo(
+    () => subjects.filter((subject) => !hiddenSubjectSet.has(subject.id)),
+    [subjects, hiddenSubjectSet],
+  );
+  const toggleSubject = async (subjectId: string) => {
+    const next = new Set(hiddenSubjectSet);
+    if (next.has(subjectId)) {
+      next.delete(subjectId);
+    } else {
+      next.add(subjectId);
+    }
+    const ids = [...next];
+    setHiddenSubjectIds(ids);
+    setVisibilitySaving(true);
+    try {
+      await runtime.localState.saveMatrixHiddenSubjectIds(boardId, ids);
+    } finally {
+      setVisibilitySaving(false);
+    }
+  };
+  const showAllSubjects = async () => {
+    setHiddenSubjectIds([]);
+    setVisibilitySaving(true);
+    try {
+      await runtime.localState.saveMatrixHiddenSubjectIds(boardId, []);
+    } finally {
+      setVisibilitySaving(false);
+    }
+  };
   const areas = activeFeatureAreas(projection);
   const capabilities = filterCapabilities(
     activeCapabilities(projection),
@@ -78,6 +125,13 @@ export function MatrixPage() {
         </div>
         <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
           <ComparisonSubjectSelector />
+          <SubjectColumnPicker
+            subjects={subjects}
+            visibleSubjectIds={new Set(visibleSubjects.map((subject) => subject.id))}
+            saving={visibilitySaving}
+            onToggle={toggleSubject}
+            onShowAll={showAllSubjects}
+          />
           {permissions.canWrite ? (
             <button
               type="button"
@@ -92,15 +146,22 @@ export function MatrixPage() {
       <CapabilityFilterBar projection={projection} filters={filters} onChange={setFilters} />
 
       <div className="panel overflow-x-auto">
-        <table className="w-full min-w-[900px] border-collapse text-left text-xs">
+        <table
+          className="w-full border-collapse text-left text-xs"
+          style={{ minWidth: 300 + visibleSubjects.length * 144 }}
+        >
           <thead className="sticky top-0 bg-[var(--panel-strong)]">
             <tr>
-              <th className="sticky left-0 z-[2] min-w-[300px] border-b border-r border-[var(--border)] bg-[var(--panel-strong)] p-3 text-[11px] uppercase tracking-wider text-[var(--faint)]">
+              <th
+                scope="col"
+                className="sticky left-0 z-[2] min-w-[300px] border-b border-r border-[var(--border)] bg-[var(--panel-strong)] p-3 text-[11px] uppercase tracking-wider text-[var(--faint)]"
+              >
                 Capability
               </th>
-              {subjects.map((subject) => (
+              {visibleSubjects.map((subject) => (
                 <th
                   key={subject.id}
+                  scope="col"
                   className={`min-w-36 border-b border-[var(--border)] p-3 ${subject.id === selectedSubjectId ? "bg-[var(--accent-soft)]" : ""}`}
                 >
                   <span className="flex items-center gap-1.5">
@@ -121,6 +182,7 @@ export function MatrixPage() {
                 area={area}
                 capabilities={areaCapabilities}
                 context={context}
+                visibleSubjects={visibleSubjects}
               />
             ))}
           </tbody>
@@ -136,14 +198,90 @@ export function MatrixPage() {
   );
 }
 
+function SubjectColumnPicker({
+  subjects,
+  visibleSubjectIds,
+  saving,
+  onToggle,
+  onShowAll,
+}: {
+  subjects: ReturnType<typeof useBoardContext>["subjects"];
+  visibleSubjectIds: ReadonlySet<string>;
+  saving: boolean;
+  onToggle: (subjectId: string) => Promise<void>;
+  onShowAll: () => Promise<void>;
+}) {
+  if (subjects.length === 0) return null;
+  return (
+    <Popover.Root>
+      <Popover.Trigger asChild>
+        <button
+          type="button"
+          className="button"
+          aria-label="Choose visible subject columns"
+          aria-busy={saving}
+          disabled={saving}
+        >
+          <Columns3 size={15} /> Columns {visibleSubjectIds.size}/{subjects.length}
+        </button>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          align="end"
+          sideOffset={6}
+          className="panel z-[70] w-64 p-3 shadow-[var(--shadow)]"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <strong className="text-sm">Visible subjects</strong>
+            <button
+              type="button"
+              className="button button-ghost !min-h-7 !px-2 text-xs"
+              disabled={saving || visibleSubjectIds.size === subjects.length}
+              onClick={() => void onShowAll()}
+            >
+              Show all
+            </button>
+          </div>
+          <div className="mt-2 grid gap-1">
+            {subjects.map((subject) => {
+              const visible = visibleSubjectIds.has(subject.id);
+              return (
+                <label
+                  key={subject.id}
+                  className="flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-2 hover:bg-[var(--accent-soft)]"
+                >
+                  <input
+                    type="checkbox"
+                    checked={visible}
+                    disabled={saving}
+                    aria-label={`Show ${subject.name} column`}
+                    onChange={() => void onToggle(subject.id)}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                    {subject.name}
+                  </span>
+                  <span className="text-[10px] text-[var(--faint)]">{subject.state}</span>
+                </label>
+              );
+            })}
+          </div>
+          <Popover.Arrow className="fill-[var(--panel)]" />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
 function MatrixGroup({
   area,
   capabilities,
   context,
+  visibleSubjects,
 }: {
   area: FeatureArea;
   capabilities: Capability[];
   context: ReturnType<typeof useBoardContext>;
+  visibleSubjects: ReturnType<typeof useBoardContext>["subjects"];
 }) {
   const { projection, subjects, selectedSubjectId } = context;
   if (capabilities.length === 0) return null;
@@ -151,7 +289,7 @@ function MatrixGroup({
     <>
       <tr>
         <th
-          colSpan={subjects.length + 1}
+          colSpan={visibleSubjects.length + 1}
           className="border-b border-[var(--border)] bg-[var(--sidebar)] px-3 py-2 text-xs font-extrabold"
         >
           {area.title}
@@ -181,7 +319,7 @@ function MatrixGroup({
                 ) : null}
               </div>
             </td>
-            {subjects.map((subject) => (
+            {visibleSubjects.map((subject) => (
               <td
                 key={subject.id}
                 className={`border-b border-[var(--border)] p-2 ${subject.id === selectedSubjectId ? "bg-[color:var(--accent-soft)]/35" : ""}`}

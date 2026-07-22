@@ -65,12 +65,28 @@ test("extension signer completes the core board, matrix, and discussion flow", a
   await expect(page.getByText("Flutter", { exact: true }).first()).toBeVisible();
 
   await page.getByRole("link", { name: "Matrix" }).click();
+  await expect(page.getByRole("heading", { name: "Capability matrix" })).toBeVisible();
   const subjectSelector = page.getByLabel("Selected comparison subject");
   await expect(subjectSelector).toBeVisible();
   await expect(page.locator("header").getByLabel("Selected comparison subject")).toHaveCount(0);
   expect(
     await subjectSelector.evaluate((element) => element.getBoundingClientRect().width),
   ).toBeLessThan(260);
+  const columns = page.getByRole("button", { name: "Choose visible subject columns" });
+  await expect(columns).toHaveText(/Columns 5\/5/);
+  await columns.click();
+  await page.getByLabel("Show Linux column").uncheck();
+  await expect(page.getByRole("columnheader", { name: /Linux/ })).toHaveCount(0);
+  await expect(columns).toHaveText(/Columns 4\/5/);
+  await expect(columns).toBeEnabled();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Capability matrix" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: /Linux/ })).toHaveCount(0);
+  await expect(columns).toHaveText(/Columns 4\/5/);
+  await columns.click();
+  await page.getByLabel("Show Linux column").check();
+  await expect(page.getByRole("columnheader", { name: /Linux/ })).toBeVisible();
+  await columns.click();
   await expect(page.getByRole("button", { name: "Filters", exact: true })).toBeVisible();
   await expect(page.getByLabel("Feature area filter")).toHaveCount(0);
   await page.getByRole("button", { name: "Filters", exact: true }).click();
