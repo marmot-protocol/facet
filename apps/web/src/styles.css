@@ -154,18 +154,6 @@ a {
   font-weight: 650;
 }
 
-.skeleton {
-  animation: pulse 1.5s ease-in-out infinite;
-  border-radius: 5px;
-  background: var(--border);
-}
-
-@keyframes pulse {
-  50% {
-    opacity: 0.45;
-  }
-}
-
 @media (max-width: 840px) {
   body {
     font-size: 13px;

@@ -8,7 +8,7 @@ import {
   Settings2,
   WifiOff,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   Navigate,
   NavLink,
@@ -20,6 +20,7 @@ import {
 import { useRuntime } from "../runtime/provider";
 import { ConnectDialog } from "./ConnectDialog";
 import { useBoard, useBoards, useIdentity } from "./hooks";
+import { LoadingState } from "./LoadingState";
 import { permissionsFor } from "./permissions";
 import { Identity, SelectInput } from "./primitives";
 
@@ -73,19 +74,10 @@ export function BoardShell() {
     });
   }, [runtime, subjects]);
 
-  if (projection === undefined)
-    return (
-      <div className="grid min-h-screen place-items-center">
-        <div className="skeleton h-8 w-40" />
-      </div>
-    );
+  if (projection === undefined) return <LoadingState label="Loading board…" fullScreen />;
   if (!projection.board) {
     if (status.phase === "starting") {
-      return (
-        <div className="grid min-h-screen place-items-center">
-          <div className="skeleton h-8 w-40" />
-        </div>
-      );
+      return <LoadingState label="Loading board…" fullScreen />;
     }
     return <Navigate to="/" replace />;
   }
@@ -183,17 +175,19 @@ export function BoardShell() {
           </div>
         </header>
         <main className="p-4 md:p-6">
-          <Outlet
-            context={
-              {
-                projection,
-                subjects,
-                selectedSubjectId,
-                setSelectedSubjectId,
-                permissions,
-              } satisfies BoardOutletContext
-            }
-          />
+          <Suspense fallback={<LoadingState label="Loading view…" />}>
+            <Outlet
+              context={
+                {
+                  projection,
+                  subjects,
+                  selectedSubjectId,
+                  setSelectedSubjectId,
+                  permissions,
+                } satisfies BoardOutletContext
+              }
+            />
+          </Suspense>
         </main>
       </div>
       <ConnectDialog open={connectOpen} onOpenChange={setConnectOpen} />
