@@ -69,9 +69,12 @@ export function Onboarding() {
       <div className="grid w-full gap-8 lg:grid-cols-[1.15fr_0.85fr]">
         <section className="self-center">
           <div className="mb-6 flex items-center gap-3">
-            <div className="grid size-10 place-items-center rounded-xl bg-[var(--accent)] text-white">
-              <Radio size={21} />
-            </div>
+            <span
+              className="grid size-10 place-items-center text-[30px] leading-none"
+              aria-hidden="true"
+            >
+              💠
+            </span>
             <span className="text-lg font-extrabold tracking-tight">Facet</span>
           </div>
           <h1 className="m-0 max-w-2xl text-4xl font-black leading-[1.05] tracking-[-0.035em] md:text-6xl">

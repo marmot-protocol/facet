@@ -5,7 +5,6 @@ import {
   Columns3,
   CreditCard,
   LayoutDashboard,
-  Radio,
   Settings2,
   WifiOff,
 } from "lucide-react";
@@ -94,8 +93,11 @@ export function BoardShell() {
         className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-[var(--border)] bg-[var(--sidebar)] px-3 md:h-screen md:flex-col md:items-stretch md:border-b-0 md:border-r md:px-3 md:py-4"
       >
         <div className="flex shrink-0 items-center gap-2 px-2 md:mb-3">
-          <span className="grid size-8 place-items-center rounded-lg bg-[var(--accent)] text-white">
-            <Radio size={17} />
+          <span
+            className="grid size-8 place-items-center text-[22px] leading-none"
+            aria-hidden="true"
+          >
+            💠
           </span>
           <strong className="text-[15px] tracking-tight">Facet</strong>
         </div>

@@ -8,6 +8,8 @@ test("empty public deployment presents accessible signer onboarding", async ({
   await page.goto("/");
 
   await expect(page.getByText("Facet", { exact: true }).first()).toBeVisible();
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute("href", "/favicon.svg");
+  await expect(page.getByText("💠", { exact: true }).first()).toBeVisible();
   await expect(
     page.getByRole("heading", {
       name: "Make cross-client decisions from signed, shared evidence.",
