@@ -105,13 +105,33 @@ test("extension signer completes the core board, matrix, and discussion flow", a
   await dialog.getByLabel("Description").fill("Edit a previously sent message.");
   await dialog.getByRole("button", { name: "Create capability" }).click();
 
-  await expect(page.getByRole("link", { name: "Message editing" })).toBeVisible();
-  const status = page.getByLabel("Set Message editing status").first();
+  await page.getByRole("button", { name: "Message editing", exact: true }).click();
+  let inlineEditor = page.getByRole("form", { name: "Edit Message editing inline" });
+  await expect(inlineEditor).toBeVisible();
+  await inlineEditor.getByLabel("Title").fill("Message revision");
+  await inlineEditor.getByLabel("Desired outcome").selectOption("standardize");
+  await inlineEditor.getByLabel("Decision status").selectOption("decided");
+  await inlineEditor.getByLabel("Priority").selectOption("now");
+  await inlineEditor.getByRole("button", { name: "Save & publish" }).click();
+  await expect(inlineEditor).toHaveCount(0);
+  const capabilityButton = page.getByRole("button", { name: "Message revision", exact: true });
+  await expect(capabilityButton).toBeVisible();
+  const capabilityRow = page.getByRole("row").filter({ has: capabilityButton });
+  await expect(capabilityRow.getByText("now", { exact: true })).toBeVisible();
+
+  const status = page.getByLabel("Set Message revision status").first();
   await expect(status.locator("..")).toHaveAttribute("data-assessment-status", "unknown");
   await status.selectOption("implemented");
   await expect(status).toHaveValue("implemented");
   await expect(status.locator("..")).toHaveAttribute("data-assessment-status", "implemented");
-  await page.getByRole("link", { name: "Message editing" }).click();
+  await capabilityButton.click();
+  inlineEditor = page.getByRole("form", { name: "Edit Message revision inline" });
+  await expect(inlineEditor.getByLabel("Desired outcome")).toHaveValue("standardize");
+  await expect(inlineEditor.getByLabel("Decision status")).toHaveValue("decided");
+  await expect(inlineEditor.getByLabel("Priority")).toHaveValue("now");
+  const matrixAccessibility = await new AxeBuilder({ page }).analyze();
+  expect(matrixAccessibility.violations).toEqual([]);
+  await inlineEditor.getByRole("link", { name: "Open full details" }).click();
 
   await expect(page.getByLabel("Discussion target")).toHaveCount(0);
   await expect(page.getByText("Signed by your connected identity")).toHaveCount(0);

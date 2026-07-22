@@ -2,14 +2,17 @@ import {
   type Assessment,
   assessmentId,
   type Capability,
+  type DecisionStatus,
+  type DesiredOutcome,
   type FeatureArea,
   type ImplementationStatus,
   KINDS,
   newEntityId,
   orderKeyBetween,
+  type Priority,
 } from "@facet/protocol";
 import * as Popover from "@radix-ui/react-popover";
-import { Columns3, LockKeyhole, MessageSquareText, Plus } from "lucide-react";
+import { Columns3, ExternalLink, LockKeyhole, MessageSquareText, Pencil, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { PublishMutation } from "../../runtime/actions";
@@ -47,6 +50,19 @@ const STATUSES: ImplementationStatus[] = [
   "stub_or_broken",
   "not_applicable",
 ];
+
+const DESIRED_OUTCOMES: DesiredOutcome[] = [
+  "keep_as_is",
+  "add",
+  "remove",
+  "standardize",
+  "platform_specific",
+  "undecided",
+];
+
+const DECISION_STATUSES: DecisionStatus[] = ["open", "discussing", "decided", "superseded"];
+
+const PRIORITIES: Priority[] = ["now", "next", "later", "none"];
 
 export function MatrixPage() {
   const context = useBoardContext();
@@ -181,7 +197,6 @@ export function MatrixPage() {
                 key={area.id}
                 area={area}
                 capabilities={areaCapabilities}
-                context={context}
                 visibleSubjects={visibleSubjects}
               />
             ))}
@@ -275,15 +290,12 @@ function SubjectColumnPicker({
 function MatrixGroup({
   area,
   capabilities,
-  context,
   visibleSubjects,
 }: {
   area: FeatureArea;
   capabilities: Capability[];
-  context: ReturnType<typeof useBoardContext>;
   visibleSubjects: ReturnType<typeof useBoardContext>["subjects"];
 }) {
-  const { projection, subjects, selectedSubjectId } = context;
   if (capabilities.length === 0) return null;
   return (
     <>
@@ -296,44 +308,241 @@ function MatrixGroup({
           <span className="ml-2 font-normal text-[var(--faint)]">{capabilities.length}</span>
         </th>
       </tr>
-      {capabilities.map((capability) => {
-        const gap = gapFor(projection, capability, subjects);
-        const discussions = unresolvedThreadCount(projection, capability.id);
-        return (
-          <tr key={capability.id} className="group hover:bg-[color:var(--accent-soft)]/30">
-            <td className="sticky left-0 z-[1] border-b border-r border-[var(--border)] bg-[var(--panel)] p-3 group-hover:bg-[var(--panel-strong)]">
-              <Link
-                to={`../capabilities/${capability.id}`}
-                className="font-bold text-inherit no-underline hover:text-[var(--accent)]"
-              >
-                {capability.title}
-              </Link>
-              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                <GapBadge label={gap.label} />
-                <PriorityBadge priority={capability.priority} />
-                {discussions ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] text-[var(--muted)]">
-                    <MessageSquareText size={11} />
-                    {discussions}
-                  </span>
-                ) : null}
+      {capabilities.map((capability) => (
+        <MatrixCapabilityRows
+          key={capability.id}
+          capability={capability}
+          visibleSubjects={visibleSubjects}
+        />
+      ))}
+    </>
+  );
+}
+
+function MatrixCapabilityRows({
+  capability,
+  visibleSubjects,
+}: {
+  capability: Capability;
+  visibleSubjects: ReturnType<typeof useBoardContext>["subjects"];
+}) {
+  const { projection, subjects, selectedSubjectId, permissions } = useBoardContext();
+  const { runtime } = useRuntime();
+  const { run, running, error, clearError } = useActionExecutor();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(capability);
+  const [baseEventId, setBaseEventId] = useState("");
+  const projected = projection.capabilities.get(capability.id);
+  const gap = gapFor(projection, capability, subjects);
+  const discussions = unresolvedThreadCount(projection, capability.id);
+  const editorId = `matrix-capability-editor-${capability.id}`;
+  const changed =
+    draft.title !== capability.title ||
+    draft.desiredOutcome !== capability.desiredOutcome ||
+    draft.decisionStatus !== capability.decisionStatus ||
+    draft.priority !== capability.priority;
+
+  const openEditor = () => {
+    if (editing) {
+      setEditing(false);
+      return;
+    }
+    clearError();
+    setDraft(capability);
+    setBaseEventId(projected?.currentEvent.id ?? "");
+    setEditing(true);
+  };
+
+  const save = async () => {
+    const current = projection.capabilities.get(capability.id);
+    if (!current || !baseEventId) return;
+    if (
+      current.currentEvent.id !== baseEventId &&
+      !confirm(
+        "This capability changed while the inline editor was open. Apply your inline changes to the newer version?",
+      )
+    )
+      return;
+    const value: Capability = {
+      ...current.value,
+      title: draft.title,
+      desiredOutcome: draft.desiredOutcome,
+      decisionStatus: draft.decisionStatus,
+      priority: draft.priority,
+    };
+    await run(
+      PublishMutation({
+        kind: KINDS.capability,
+        operation: "update",
+        entityId: value.id,
+        baseEventId: current.currentEvent.id,
+        value,
+      }),
+    );
+    await runtime.localState.follow(capability.id);
+    setEditing(false);
+  };
+
+  return (
+    <>
+      <tr className="group hover:bg-[color:var(--accent-soft)]/30">
+        <td className="sticky left-0 z-[1] border-b border-r border-[var(--border)] bg-[var(--panel)] p-3 group-hover:bg-[var(--panel-strong)]">
+          {permissions.canWrite ? (
+            <button
+              type="button"
+              className="flex w-full cursor-pointer items-start justify-between gap-2 border-0 bg-transparent p-0 text-left font-bold text-inherit hover:text-[var(--accent)]"
+              aria-expanded={editing}
+              aria-controls={editorId}
+              onClick={openEditor}
+            >
+              <span>{capability.title}</span>
+              <Pencil className="mt-0.5 shrink-0 opacity-50" size={13} aria-hidden="true" />
+            </button>
+          ) : (
+            <Link
+              to={`../capabilities/${capability.id}`}
+              className="font-bold text-inherit no-underline hover:text-[var(--accent)]"
+            >
+              {capability.title}
+            </Link>
+          )}
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <GapBadge label={gap.label} />
+            <PriorityBadge priority={capability.priority} />
+            {discussions ? (
+              <span className="inline-flex items-center gap-1 text-[10px] text-[var(--muted)]">
+                <MessageSquareText size={11} />
+                {discussions}
+              </span>
+            ) : null}
+          </div>
+        </td>
+        {visibleSubjects.map((subject) => (
+          <td
+            key={subject.id}
+            className={`border-b border-[var(--border)] p-2 ${subject.id === selectedSubjectId ? "bg-[color:var(--accent-soft)]/35" : ""}`}
+          >
+            <AssessmentCell
+              capability={capability}
+              subjectId={subject.id}
+              locked={subject.locked}
+            />
+          </td>
+        ))}
+      </tr>
+      {editing ? (
+        <tr>
+          <td
+            id={editorId}
+            colSpan={visibleSubjects.length + 1}
+            className="border-b border-[var(--border)] bg-[var(--sidebar)] p-3"
+          >
+            <form
+              aria-label={`Edit ${capability.title} inline`}
+              className="grid gap-3 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void save();
+              }}
+            >
+              <div className="grid gap-3 lg:grid-cols-[minmax(240px,2fr)_repeat(3,minmax(140px,1fr))]">
+                <label className="label">
+                  Title
+                  <input
+                    className="input !min-h-9"
+                    value={draft.title}
+                    required
+                    onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+                  />
+                </label>
+                <label className="label">
+                  Desired outcome
+                  <select
+                    className="input !min-h-9"
+                    value={draft.desiredOutcome}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        desiredOutcome: event.target.value as DesiredOutcome,
+                      })
+                    }
+                  >
+                    {DESIRED_OUTCOMES.map((value) => (
+                      <option key={value} value={value}>
+                        {humanize(value)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="label">
+                  Decision status
+                  <select
+                    className="input !min-h-9"
+                    value={draft.decisionStatus}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        decisionStatus: event.target.value as DecisionStatus,
+                      })
+                    }
+                  >
+                    {DECISION_STATUSES.map((value) => (
+                      <option key={value} value={value}>
+                        {humanize(value)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="label">
+                  Priority
+                  <select
+                    className="input !min-h-9"
+                    value={draft.priority}
+                    onChange={(event) =>
+                      setDraft({ ...draft, priority: event.target.value as Priority })
+                    }
+                  >
+                    {PRIORITIES.map((value) => (
+                      <option key={value} value={value}>
+                        {humanize(value)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
-            </td>
-            {visibleSubjects.map((subject) => (
-              <td
-                key={subject.id}
-                className={`border-b border-[var(--border)] p-2 ${subject.id === selectedSubjectId ? "bg-[color:var(--accent-soft)]/35" : ""}`}
-              >
-                <AssessmentCell
-                  capability={capability}
-                  subjectId={subject.id}
-                  locked={subject.locked}
-                />
-              </td>
-            ))}
-          </tr>
-        );
-      })}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="m-0 text-[11px] text-[var(--faint)]">
+                  Saving publishes a complete signed capability snapshot.
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    className="button button-ghost !min-h-8 text-xs no-underline"
+                    to={`../capabilities/${capability.id}`}
+                  >
+                    Open full details <ExternalLink size={12} />
+                  </Link>
+                  <button
+                    type="button"
+                    className="button !min-h-8 text-xs"
+                    disabled={running}
+                    onClick={() => setEditing(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="button button-primary !min-h-8 text-xs"
+                    disabled={running || !changed || !draft.title.trim()}
+                  >
+                    {running ? "Publishing…" : "Save & publish"}
+                  </button>
+                </div>
+              </div>
+              {error ? <p className="m-0 text-xs text-[var(--critical)]">{error}</p> : null}
+            </form>
+          </td>
+        </tr>
+      ) : null}
     </>
   );
 }
@@ -416,6 +625,10 @@ function AssessmentCell({
       ) : null}
     </div>
   );
+}
+
+function humanize(value: string): string {
+  return value.replaceAll("_", " ").replace(/^./u, (letter) => letter.toUpperCase());
 }
 
 function CreateStructureDialog({
