@@ -521,7 +521,7 @@ function CommentThread({
         <Identity pubkey={root.event.pubkey} compact />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Identity pubkey={root.event.pubkey} />
+            <Identity pubkey={root.event.pubkey} showAvatar={false} />
             <span className="text-[11px] text-[var(--faint)]">
               {formatRelative(root.event.created_at)}
             </span>

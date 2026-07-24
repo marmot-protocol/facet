@@ -235,23 +235,33 @@ export function Badge({
   );
 }
 
-export function Identity({ pubkey, compact = false }: { pubkey: string; compact?: boolean }) {
+export function Identity({
+  pubkey,
+  compact = false,
+  showAvatar = true,
+}: {
+  pubkey: string;
+  compact?: boolean;
+  showAvatar?: boolean;
+}) {
   const profile = useEventModel(ProfileModel, [pubkey]);
   const label = profile?.display_name || profile?.name || shortNpub(pubkey);
   return (
     <span className="inline-flex min-w-0 items-center gap-2" title={nip19.npubEncode(pubkey)}>
-      {profile?.picture ? (
-        <img
-          className="size-6 rounded-full object-cover"
-          src={profile.picture}
-          alt=""
-          loading="lazy"
-        />
-      ) : (
-        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[10px] font-bold text-[var(--accent)]">
-          {label.slice(0, 2).toUpperCase()}
-        </span>
-      )}
+      {showAvatar ? (
+        profile?.picture ? (
+          <img
+            className="size-6 rounded-full object-cover"
+            src={profile.picture}
+            alt=""
+            loading="lazy"
+          />
+        ) : (
+          <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[10px] font-bold text-[var(--accent)]">
+            {label.slice(0, 2).toUpperCase()}
+          </span>
+        )
+      ) : null}
       {!compact ? <span className="truncate">{label}</span> : null}
     </span>
   );
